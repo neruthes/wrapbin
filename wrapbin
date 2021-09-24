@@ -1,0 +1,73 @@
+#!/bin/bash
+
+
+
+function _makeFakeBin() {
+    FN=$1
+    TMPL=$2
+    BINDIR=$3
+    # echo "[DEBUG] FN=$1 ; TMPL=$2"
+    if [[ -e /usr/wrapbin/$FN ]]; then
+        rm /usr/wrapbin/$FN
+    fi
+    touch /usr/wrapbin/$FN
+    chmod 755 /usr/wrapbin/$FN
+    echo "export wPROG=$BINDIR/$FN" > /usr/wrapbin/$FN
+    cat /etc/wrapbin/templates.d/$TMPL >> /usr/wrapbin/$FN
+    echo "[INFO] Made '$BINDIR/$FN':"
+    cat /usr/wrapbin/$FN
+    echo ""
+}
+function _updateDir_tryFile() {
+    # FN=$(realpath $1)
+    FN=$1
+    BINDIR=$2
+    if [[ $(cat /etc/wrapbin/rules.d/* | grep "^$FN " 2>/dev/null) == "" ]]; then
+        # echo "[DEBUG] No rule for '$FN'; skipped."
+        return 0
+    fi
+    RULELINE="$(cat /etc/wrapbin/rules.d/* | grep $FN)"
+    # echo "[DEBUG] FN=$FN RULELINE=$RULELINE"
+
+    # Make the fake bin file
+    _makeFakeBin $RULELINE $BINDIR
+}
+function _updateDir() {
+    BINDIR=$1
+    # Must exist
+    if [[ ! -e $BINDIR ]]; then
+        return 0
+    fi
+    # Must not be /usr/wrapbin itself
+    if [[ $BINDIR == /usr/wrapbin ]]; then
+        return 0
+    fi
+    # Finally do the work
+    for FN in $(ls $BINDIR); do
+        _updateDir_tryFile $FN $BINDIR
+    done
+}
+
+
+
+function SC_update() {
+    GOTPATH=$1
+    RAWPATHLIST="${GOTPATH//:/ }"
+    PATHLIST="$(printf "%s\n" $RAWPATHLIST | sort -u)"
+    for BINDIR in $PATHLIST; do
+        # echo "[DEBUG] Working on $BINDIR"
+        _updateDir $BINDIR
+    done
+}
+function SC_clear() {
+    rm /usr/wrapbin/*
+}
+
+case $1 in
+    update )
+        SC_update $2
+        ;;
+    clear )
+        SC_clear
+        ;;
+esac
