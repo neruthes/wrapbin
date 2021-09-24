@@ -10,7 +10,7 @@ Wrap executable files in to customizable scripts
 wrapbin update $PATH
 ```
 
-Wrapbin gets every executable file in $PATH and make corresponding scripts at `/usr/bin/wrapbin`.
+Wrapbin gets every executable file in $PATH and make corresponding scripts at `/usr/wrapbin`.
 
 ## Configuration
 
@@ -23,7 +23,7 @@ Basic configurations
 In these files, each line specifies which template should be used for the executable file path.
 
 ```
-/usr/bin/someprogram python_is_python2
+someprogram python_is_python2
 ```
 
 ### /etc/wrapbin/templates.d
